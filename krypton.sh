@@ -166,31 +166,33 @@ decrypt_zip() {
     require_commands unzip
 
     # 出力先と同じ場所に作業ディレクトリを作り、復号と解凍はその中で行う
-    tmpdir="$(mktemp -d "$(dirname -- "$in")/.krypton.XXXXXX")"
-    local zip="$tmpdir/archive.zip"
-    local extracted="$tmpdir/extracted"
+    tmpdir="$(mktemp -d "$(dirname -- "$in")/.krypton.XXXXXX")" # 入力元のファイルのディレクトリ直下の".krypton.XXXXXX"(Xはランダムな英数字)というフォルダのパス
+    local zip="$tmpdir/archive.zip" # 一時ディレクトリの下の、archive.zipというファイルのパス
+    local extracted="$tmpdir/extracted" # 一時ディレクトリの下の、extractedというフォルダのパス
 
+    # 入力元の.ageファイルを、一時フォルダ内にarchive.zipとして復号化
     echo "> Decrypting..."
     echo "  $in -> $zip"
     age -d -i <(op read "$KEY_REF") -o "$zip" "$in"
 
+    # archive.zipの内容を、extractedフォルダに展開する
     echo "> Extracting..."
     mkdir -- "$extracted"
     unzip -q "$zip" -d "$extracted"
 
     # トップレベルがディレクトリ1つだけならそれを、そうでなければ展開先ごと出力にする
     local result="$extracted" top
-    if [[ "$(find "$extracted" -mindepth 1 -maxdepth 1 | wc -l)" -eq 1 ]]; then
-        top="$(find "$extracted" -mindepth 1 -maxdepth 1)"
+    if [[ "$(find "$extracted" -mindepth 1 -maxdepth 1 | wc -l)" -eq 1 ]]; then # extracted直下に、ファイルまたはフォルダが一つだけの時
+        top="$(find "$extracted" -mindepth 1 -maxdepth 1)" # top をそのファイルまたはディレクトリとする
         if [[ -d "$top" && ! -L "$top" ]]; then
-            result="$top"
+            result="$top" # topがシンボリックでなければ、resultをtopにする
         fi
     fi
 
     # 解凍中に出力先が作られていないか再確認してから移動
     target_check "$out"
     echo "  -> $out"
-    mv -- "$result" "$out"
+    mv -- "$result" "$out" # 展開の結果を、outのパスに移動する
     # 元のファイルの削除
     remove_original "$in" "$out"
     echo "> Finished!"
