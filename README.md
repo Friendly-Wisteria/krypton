@@ -103,4 +103,4 @@ krypton -d /path/to/target/encrypted/file.age
 
 
 ## ライセンス
-MIT License
+[MIT License](LICENSE)
