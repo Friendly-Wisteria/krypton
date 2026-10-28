@@ -75,11 +75,11 @@ AGE-SECRET-KEY-...
 
 
 ### 6. スクリプトの配置と権限付与
-パスの通っているディレクトリ（例: `~/bin` や `~/.local/bin`）に配置し、実行権限を付与します。
+パスの通っているディレクトリ（例: `~/.local/bin`）に配置し、実行権限を付与します。
 
 ```bash
-mv krypton.sh ~/bin/krypton
-chmod +x ~/bin/krypton
+mv krypton.sh ~/.local/bin/krypton
+chmod +x ~/.local/bin/krypton
 ```
 
 ## 使い方
