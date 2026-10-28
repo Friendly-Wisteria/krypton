@@ -58,11 +58,12 @@ krypton -i
 
 以下の処理が自動で行われます。
 
-1. 1Password CLI にサインインしているかを確認します。
-2. 鍵ペアを生成し、1Password の「個人」保管庫にセキュアノート `Krypton Key` として登録します。
+1. 鍵ペアを生成し、1Password の「個人」保管庫にセキュアノート `Krypton Key` として登録します。
    * `secretkey` フィールド: 秘密鍵（`AGE-SECRET-KEY-...`）
    * `publickey` フィールド: 公開鍵（`age1...`）
-3. 公開鍵を設定ファイル `~/.config/krypton/config` に保存します。
+2. 公開鍵を設定ファイル `~/.config/krypton/config` に保存します。
+
+1Password にアクセスできない場合（未サインインや承認ダイアログを閉じた場合など）は、エラー内容を表示して中断します。
 
 秘密鍵はファイルに書き出されず、1Password にのみ保存されます。
 
