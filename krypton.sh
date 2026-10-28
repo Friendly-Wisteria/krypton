@@ -127,18 +127,22 @@ initialize() {
 
     # キーペアを生成
     echo "Generating key pair..."
+    local key_pair public_key secret_key
     key_pair=$(age-keygen 2>/dev/null)
-    public_key=$(grep '# public key:' <<< "$key_pair" | awk '{print $NF}')
-    secret_key=$(grep '^AGE-SECRET-KEY-' <<< "$key_pair")
+    # macOS標準のbash 3.2ではヒアストリング(<<<)が一時ファイルを作るため、printfのパイプで渡す
+    public_key=$(printf '%s\n' "$key_pair" | grep '# public key:' | awk '{print $NF}')
+    secret_key=$(printf '%s\n' "$key_pair" | grep '^AGE-SECRET-KEY-')
+    # JSONに埋め込むため、想定外の文字が含まれていないことを確認する
+    [[ "$public_key" =~ ^age1[a-z0-9]+$ ]] || { echo "Failed to generate public key" >&2; exit 1; }
+    [[ "$secret_key" =~ ^AGE-SECRET-KEY-[A-Z0-9]+$ ]] || { echo "Failed to generate secret key" >&2; exit 1; }
 
     # キーペアを1Passwordに登録
+    # 秘密鍵をコマンド引数で渡すとpsなどから見えるため、JSONテンプレートを標準入力から渡す
+    # (printfはbashの組み込みコマンドなので、引数がプロセス一覧に現れない)
     echo "Registering to 1Password..."
-    op item create \
-        --category="Secure Note" \
-        --title="Krypton Key" \
-        --vault="Personal" \
-        "publickey[text]=$public_key" \
-        "secretkey[password]=$secret_key"
+    printf '{"title":"Krypton Key","category":"SECURE_NOTE","fields":[{"id":"publickey","type":"STRING","label":"publickey","value":"%s"},{"id":"secretkey","type":"CONCEALED","label":"secretkey","value":"%s"}]}' \
+        "$public_key" "$secret_key" \
+        | op item create --vault="Personal" - >/dev/null
     echo ">> OK"
     echo ""
     # 公開鍵をconfigファイルに作成
