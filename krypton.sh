@@ -26,13 +26,15 @@ require_commands() {
 }
 
 audit_age_recipient() {
-    # 設定ファイルから公開鍵を読み取る。なければ初期設定を案内して終了
-    if [[ ! -f "$CONFIG_FILE" ]]; then
+    # 設定ファイルがあればそこから公開鍵を読み取り、なければハードコードされた値を使う
+    if [[ -f "$CONFIG_FILE" ]]; then
+        AGE_RECIPIENT=$(sed -n 's/^PUBLIC_KEY=//p' "$CONFIG_FILE")
+    elif [[ -z "$AGE_RECIPIENT" ]]; then
+        # どちらもなければ初期設定を案内して終了
         echo "Config file not found: $CONFIG_FILE" >&2
         echo "Run 'krypton -i' to set up your key pair." >&2
         exit 1
     fi
-    AGE_RECIPIENT=$(sed -n 's/^PUBLIC_KEY=//p' "$CONFIG_FILE")
     echo "Public key: $AGE_RECIPIENT"
     # AGE_RECIPIENTが公開鍵の形式を満たしているかどうかを検証する
     [[ "$AGE_RECIPIENT" =~ ^age1[a-z0-9]+$ ]] || { echo "Invalid AGE_RECIPIENT" >&2; exit 1; }
