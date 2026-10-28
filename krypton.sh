@@ -6,6 +6,8 @@ set -euo pipefail
 # 作成するファイルを自分だけが読める権限にする
 umask 077
 
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/krypton"
+CONFIG_FILE="$CONFIG_DIR/config"
 AGE_RECIPIENT=""
 KEY_REF="op://Personal/Krypton Key/secretkey"
 
@@ -24,6 +26,15 @@ require_commands() {
 }
 
 audit_age_recipient() {
+    # 設定ファイルから公開鍵を読み取る。なければ初期設定を案内して終了
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        echo "Config file not found: $CONFIG_FILE" >&2
+        echo "Run 'krypton -i' to set up your key pair." >&2
+        exit 1
+    fi
+    AGE_RECIPIENT=$(sed -n 's/^PUBLIC_KEY=//p' "$CONFIG_FILE")
+    echo "Public key: $AGE_RECIPIENT"
+    # AGE_RECIPIENTが公開鍵の形式を満たしているかどうかを検証する
     [[ "$AGE_RECIPIENT" =~ ^age1[a-z0-9]+$ ]] || { echo "Invalid AGE_RECIPIENT" >&2; exit 1; }
 }
 
@@ -81,7 +92,69 @@ remove_original() {
     fi
 }
 
+initialize() {
+    # 前提のチェック:
+    require_commands age age-keygen op
+    # サインイン状態の確認
+    echo "Validating 1Password CLI session..."
+    if ! op whoami; then
+        echo ">> Failed"
+        echo "Your 1Password CLI session has expired or you are not signed in." >&2
+        echo "Run the following command and try again:" >&2
+        echo "" >&2
+        echo "op signin" >&2
+        echo "" >&2
+        exit 1
+    fi
+    echo ">> OK"
+    echo ""
+
+    # 既存のキーがないかを調べる
+    echo "Searching existing Krypton Key on 1Password..."
+    if op item get "Krypton Key" --vault Personal >/dev/null; then
+        echo ">> Krypton Key has been found"
+        echo ""
+        # 新しい鍵は作らず、1Passwordの秘密鍵から公開鍵を導出して設定ファイルを復元する
+        # (手動で登録した鍵にはpublickeyフィールドがないため、秘密鍵から導出する)
+        echo "Restoring public key from 1Password..."
+        save_public_key "$(op read "$KEY_REF" | age-keygen -y)"
+        exit 0
+    fi
+    echo ">> No Krypton Key found has been found"
+    echo ""
+
+    # キーペアを生成
+    echo "Generating key pair..."
+    key_pair=$(age-keygen 2>/dev/null)
+    public_key=$(grep '# public key:' <<< "$key_pair" | awk '{print $NF}')
+    secret_key=$(grep '^AGE-SECRET-KEY-' <<< "$key_pair")
+
+    # キーペアを1Passwordに登録
+    echo "Registering to 1Password..."
+    op item create \
+        --category="Secure Note" \
+        --title="Krypton Key" \
+        --vault="Personal" \
+        "publickey[text]=$public_key" \
+        "secretkey[password]=$secret_key"
+    echo ">> OK"
+    echo ""
+    # 公開鍵をconfigファイルに作成
+    save_public_key "$public_key"
+}
+
+save_public_key() {
+    local public_key="$1"
+    # 公開鍵の形式を満たしていなければ書き込まない
+    [[ "$public_key" =~ ^age1[a-z0-9]+$ ]] || { echo "Invalid public key: $public_key" >&2; exit 1; }
+    mkdir -p -- "$CONFIG_DIR"
+    echo "PUBLIC_KEY=$public_key" > "$CONFIG_FILE"
+    echo "Saved public key to $CONFIG_FILE"
+}
+
 encrypt() {
+    # 公開鍵が有効であることをチェック
+    audit_age_recipient
     echo "--Encryption--"
     # encrypt file or directoryへのパス
     local in="$1"
@@ -194,14 +267,17 @@ echo "=========================="
 echo "** Krypton File Encrypt **"
 echo "=========================="
 
-# 公開鍵が有効であることをチェック
-audit_age_recipient
+
 
 mode=""
 file=""
 
-while getopts ":e:d:" opt; do
+
+
+while getopts ":aie:d:" opt; do
     case "$opt" in
+        a) [[ -z "$mode" ]] || usage; mode="audit" ;;
+        i) [[ -z "$mode" ]] || usage; mode="init" ;;
         e) [[ -z "$mode" ]] || usage; mode="encrypt"; file="$OPTARG" ;;
         d) [[ -z "$mode" ]] || usage; mode="decrypt"; file="$OPTARG" ;;
         :) echo "Option -$OPTARG requires a file" >&2; usage ;;
@@ -216,6 +292,8 @@ shift $((OPTIND - 1))
 require_commands age op
 
 case "$mode" in
+    audit) audit_age_recipient ;;
+    init) initialize ;;
     encrypt) encrypt "$file" ;;
     decrypt) decrypt "$file" ;;
 esac
