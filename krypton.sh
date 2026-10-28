@@ -41,7 +41,7 @@ audit_age_recipient() {
 }
 
 usage() {
-  echo "Usage: $0 (-e FILE|DIR | -d FILE)" >&2
+  echo "Usage: $0 (-i | -a | -e FILE|DIR | -d FILE)" >&2
   exit 1
 }
 
