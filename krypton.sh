@@ -97,21 +97,9 @@ remove_original() {
 initialize() {
     # 前提のチェック:
     require_commands age age-keygen op
-    # サインイン状態の確認
-    echo "Validating 1Password CLI session..."
-    if ! op whoami; then
-        echo ">> Failed"
-        echo "Your 1Password CLI session has expired or you are not signed in." >&2
-        echo "Run the following command and try again:" >&2
-        echo "" >&2
-        echo "op signin" >&2
-        echo "" >&2
-        exit 1
-    fi
-    echo ">> OK"
-    echo ""
 
     # 既存のキーがないかを調べる
+    # (未サインインや承認の拒否もここでエラーとして検出され、中断される)
     echo "Searching existing Krypton Key on 1Password..."
     # opは見つからない場合も認証やネットワークのエラーも同じ終了コードを返すため、エラーメッセージで区別する
     local get_err
