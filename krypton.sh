@@ -113,7 +113,9 @@ initialize() {
 
     # 既存のキーがないかを調べる
     echo "Searching existing Krypton Key on 1Password..."
-    if op item get "Krypton Key" --vault Personal >/dev/null; then
+    # opは見つからない場合も認証やネットワークのエラーも同じ終了コードを返すため、エラーメッセージで区別する
+    local get_err
+    if get_err=$(op item get "Krypton Key" --vault Personal 2>&1 >/dev/null); then
         echo ">> Krypton Key has been found"
         echo ""
         # 新しい鍵は作らず、1Passwordの秘密鍵から公開鍵を導出して設定ファイルを復元する
@@ -122,7 +124,14 @@ initialize() {
         save_public_key "$(op read "$KEY_REF" | age-keygen -y)"
         exit 0
     fi
-    echo ">> No Krypton Key found has been found"
+    # 「アイテムが存在しない」以外のエラーで鍵を新規作成すると、既存の鍵と重複するおそれがあるため中断する
+    if [[ "$get_err" != *"isn't an item"* ]]; then
+        echo ">> Failed"
+        echo "$get_err" >&2
+        echo "Could not determine whether Krypton Key exists. Aborting without creating a new key." >&2
+        exit 1
+    fi
+    echo ">> No Krypton Key found"
     echo ""
 
     # キーペアを生成
