@@ -6,7 +6,7 @@ set -euo pipefail
 # 作成するファイルを自分だけが読める権限にする
 umask 077
 
-AGE_RECIPIENT="age1vekkrgkqkh9smgnf880x0clx0tlu2xgpvkkq5fdvh37kk7yzv5esg9m3hx"
+AGE_RECIPIENT=""
 KEY_REF="op://Personal/Krypton Key/secretkey"
 
 partial=""

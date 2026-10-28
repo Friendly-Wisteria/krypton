@@ -56,7 +56,6 @@ AGE-SECRET-KEY-...
 
 1. **公開鍵の設定**: `public key:`に続く`age1...`の文字列をコピーし、`krypton.sh`のAGE_RECIPIENT="..."に貼り付けます。
 2. **秘密鍵の設定**: `AGE-SECRET-KEY-...`から始まる文字列は、次の手順5で 1Password に登録します。
-  * **この文字列は絶対に他人に教えてはいけません**
 
 > [!CAUTION]
 秘密鍵（`AGE-SECRET-KEY-...`）は絶対に他人に教えてはいけません。作業が終わったら `key.txt` は必ず削除してください。
