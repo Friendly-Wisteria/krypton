@@ -1,3 +1,4 @@
 .env
 *.age
 .DS_Store
+dummy_data

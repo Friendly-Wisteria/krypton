@@ -23,6 +23,10 @@ require_commands() {
     fi
 }
 
+audit_age_recipient() {
+    [[ "$AGE_RECIPIENT" =~ ^age1[a-z0-9]+$ ]] || { echo "Invalid AGE_RECIPIENT" >&2; exit 1; }
+}
+
 usage() {
   echo "Usage: $0 (-e FILE|DIR | -d FILE)" >&2
   exit 1
@@ -189,6 +193,10 @@ decrypt_zip() {
 echo "=========================="
 echo "** Krypton File Encrypt **"
 echo "=========================="
+
+# 公開鍵が有効であることをチェック
+audit_age_recipient
+
 mode=""
 file=""
 
