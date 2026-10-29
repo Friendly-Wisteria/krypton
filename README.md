@@ -112,6 +112,45 @@ krypton -a
 ```
 
 * 暗号化に使われる公開鍵を表示し、正しい形式かどうかを検証します。
+* 公開鍵を設定ファイルとスクリプトに書き込んだ値のどちらから読み込んだかも表示されます。
+
+### ヘルプの表示 (`-h`)
+```bash
+krypton -h
+```
+
+* 使い方とオプションの一覧を表示します。`age` や `op` がインストールされていない環境でも表示できます。
+* オプションを誤って指定した場合も同じ一覧が表示されます（この場合はエラーとして扱われ、終了コードは 1 になります）。
+
+### 実行中の表示
+各処理は、見出し・手順・結果の形で表示されます。
+
+* `--見出し--`: 実行中の処理（`--Encryption--` など）
+* `> `: これから行う手順
+* `>> `: その手順の結果（エラーの場合も `>> ` で表示されます）
+* `--Finished!--`: 処理全体の完了
+
+ファイルを暗号化した場合の表示例です。
+
+```text
+==========================
+** Krypton File Encrypt **
+==========================
+--Encryption--
+
+> Auditing AGE_RECIPIENT
+>> Applied AGE_RECIPIENT in /Users/you/.config/krypton/config
+>> OK
+> Encrypting...
+  secret.txt -> secret.txt.age
+>> OK
+> Verifying secret key...
+>> OK
+> Removing original file: secret.txt
+>> OK
+
+--Finished!---
+```
 
 
 ## 免責事項
