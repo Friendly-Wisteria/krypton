@@ -43,6 +43,7 @@ audit_age_recipient() {
         # -aで呼び出された時のみモードの表示
         echo "--Audit AGE_RECIPIENT--"
         echo ""
+        echo "> Loading AGE_RECIPIENT"
     fi
 
     # 設定ファイルがあればそこから公開鍵を読み取る
@@ -144,9 +145,11 @@ remove_original() {
     if [[ -d "$in" ]]; then
         echo "> Removing original directory: $in"
         rm -rf -- "$in"
+        echo ">> OK"
     else
         echo "> Removing original file: $in"
         rm -f -- "$in"
+        echo ">> OK"
     fi
 }
 
@@ -163,6 +166,7 @@ initialize() {
     # 前提のチェック:
     echo "> Searching required commands"
     require_commands age age-keygen op
+    echo ">> OK"
 
     # 既存のキーがないかを調べる
     # (未サインインや承認の拒否もここでエラーとして検出され、中断される)
@@ -198,6 +202,7 @@ initialize() {
     # JSONに埋め込むため、想定外の文字が含まれていないことを確認する
     [[ "$public_key" =~ ^age1[a-z0-9]+$ ]] || { echo ">> Failed to generate public key" >&2; exit 1; }
     [[ "$secret_key" =~ ^AGE-SECRET-KEY-[A-Z0-9]+$ ]] || { echo ">> Failed to generate secret key" >&2; exit 1; }
+    echo ">> OK"
 
     # キーペアを1Passwordに登録
     # 秘密鍵をコマンド引数で渡すとpsなどから見えるため、JSONテンプレートを標準入力から渡す
@@ -208,6 +213,7 @@ initialize() {
         | op item create --vault="Personal" - >/dev/null
     echo ">> OK"
     # 公開鍵をconfigファイルに作成
+    echo "> Saving public key..."
     save_public_key "$public_key"
     echo ">> Finished!"
     echo "------------------"
@@ -253,6 +259,7 @@ encrypt() {
         src="$tmpdir/$(basename -- "$in").zip"
         echo "  $in -> $src"
         (cd "$(dirname -- "$in")" && zip -r -q -y "$src" "./$(basename -- "$in")")
+    echo ">> OK"
     else
         file_check "$in" "$out"
     fi
@@ -262,12 +269,14 @@ encrypt() {
     echo "  $src -> $out"
     partial="$out"
     age -r "$AGE_RECIPIENT" -o "$out" "$src"
+    echo ">> OK"
 
 
     # 手元の秘密鍵で復号して暗号化対象と一致するか検証
     echo "> Verifying secret key..."
     age -d -i <(op read "$KEY_REF") "$out" | cmp -s - "$src" \
         || { echo ">> Verification failed, keeping: $in" >&2; rm -f -- "$out"; exit 1; }
+    echo ">> OK"
     partial=""
     # 元のファイルの削除
     remove_original "$in" "$out"
@@ -300,6 +309,7 @@ decrypt() {
     echo "  $in -> $out"
     partial="$out"
     age -d -i <(op read "$KEY_REF") -o "$out" "$in"
+    echo ">> OK"
     partial=""
     # 元のファイルの削除
     remove_original "$in" "$out"
@@ -322,11 +332,13 @@ decrypt_zip() {
     echo "> Decrypting..."
     echo "  $in -> $zip"
     age -d -i <(op read "$KEY_REF") -o "$zip" "$in"
+    echo ">> OK"
 
     # archive.zipの内容を、extractedフォルダに展開する
     echo "> Extracting..."
     mkdir -- "$extracted"
     unzip -q "$zip" -d "$extracted"
+    echo ">> OK"
 
     # トップレベルがディレクトリ1つだけならそれを、そうでなければ展開先ごと出力にする
     local result="$extracted" top
@@ -339,8 +351,10 @@ decrypt_zip() {
 
     # 解凍中に出力先が作られていないか再確認してから移動
     target_check "$out"
-    echo "  -> $out"
+    echo "> Moving to output..."
+    echo "  $result -> $out"
     mv -- "$result" "$out" # 展開の結果を、outのパスに移動する
+    echo ">> OK"
     # 元のファイルの削除
     remove_original "$in" "$out"
     echo ">> Finished!"
