@@ -179,8 +179,7 @@ initialize() {
         # (手動で登録した鍵にはpublickeyフィールドがないため、秘密鍵から導出する)
         echo "> Restoring public key from 1Password..."
         save_public_key "$(op read "$KEY_REF" | age-keygen -y)"
-        echo ">> Finished!"
-        echo "------------------"
+        echo "--Finished!-------"
         exit 0
     fi
     # 「アイテムが存在しない」以外のエラーで鍵を新規作成すると、既存の鍵と重複するおそれがあるため中断する
@@ -215,8 +214,7 @@ initialize() {
     # 公開鍵をconfigファイルに作成
     echo "> Saving public key..."
     save_public_key "$public_key"
-    echo ">> Finished!"
-    echo "------------------"
+    echo "--Finished!-------"
 }
 
 save_public_key() {
@@ -280,8 +278,7 @@ encrypt() {
     partial=""
     # 元のファイルの削除
     remove_original "$in" "$out"
-    echo ">> Finished!"
-    echo "--------------"
+    echo "--Finished!---"
 }
 
 decrypt() {
@@ -313,8 +310,7 @@ decrypt() {
     partial=""
     # 元のファイルの削除
     remove_original "$in" "$out"
-    echo ">> Finished!"
-    echo "--------------"
+    echo "--Finished!---"
 }
 
 decrypt_zip() {
@@ -357,8 +353,7 @@ decrypt_zip() {
     echo ">> OK"
     # 元のファイルの削除
     remove_original "$in" "$out"
-    echo ">> Finished!"
-    echo "--------------"
+    echo "--Finished!---"
 }
 
 main() {
